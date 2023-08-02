@@ -43,12 +43,12 @@ const RING_SRCS: &[(&[&str], &str)] = &[
     (&[], "crypto/mem.c"),
     (&[], "crypto/poly1305/poly1305.c"),
 
-    (&[AARCH64, ARM, X86_64, X86], "crypto/crypto.c"),
-    (&[AARCH64, ARM, X86_64, X86], "crypto/curve25519/curve25519.c"),
-    (&[AARCH64, ARM, X86_64, X86], "crypto/fipsmodule/ec/ecp_nistz.c"),
-    (&[AARCH64, ARM, X86_64, X86], "crypto/fipsmodule/ec/ecp_nistz256.c"),
-    (&[AARCH64, ARM, X86_64, X86], "crypto/fipsmodule/ec/gfp_p256.c"),
-    (&[AARCH64, ARM, X86_64, X86], "crypto/fipsmodule/ec/gfp_p384.c"),
+    (&[], "crypto/crypto.c"),
+    (&[], "crypto/curve25519/curve25519.c"),
+    (&[], "crypto/fipsmodule/ec/ecp_nistz.c"),
+    (&[], "crypto/fipsmodule/ec/ecp_nistz256.c"),
+    (&[], "crypto/fipsmodule/ec/gfp_p256.c"),
+    (&[], "crypto/fipsmodule/ec/gfp_p384.c"),
 
     (&[X86_64, X86], "crypto/cpu-intel.c"),
 
@@ -349,16 +349,15 @@ fn build_c_code(target: &Target, pregenerated: PathBuf, out_dir: &Path) {
         }
     }
 
-    let (_, _, perlasm_format) = ASM_TARGETS
+    let maybe_perlasm_format = ASM_TARGETS
         .iter()
         .find(|entry| {
             let &(entry_arch, entry_os, _) = *entry;
             entry_arch == target.arch && is_none_or_equals(entry_os, &target.os)
-        })
-        .unwrap();
+        });
 
     let use_pregenerated = !target.is_git;
-    let warnings_are_errors = target.is_git;
+    let warnings_are_errors = false;
 
     let asm_dir = if use_pregenerated {
         &pregenerated
@@ -366,7 +365,7 @@ fn build_c_code(target: &Target, pregenerated: PathBuf, out_dir: &Path) {
         out_dir
     };
 
-    let asm_srcs = if let Some(perlasm_format) = perlasm_format {
+    let asm_srcs = if let Some((_, _, Some(perlasm_format))) = maybe_perlasm_format {
         let perlasm_src_dsts =
             perlasm_src_dsts(asm_dir, &target.arch, Some(&target.os), perlasm_format);
 

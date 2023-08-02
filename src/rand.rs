@@ -169,7 +169,8 @@ impl crate::sealed::Sealed for SystemRandom {}
         not(feature = "dev_urandom_fallback")
     ),
     target_arch = "wasm32",
-    windows
+    windows,
+    target_os = "espidf"
 ))]
 use self::sysrand::fill as fill_impl;
 
@@ -296,9 +297,25 @@ mod sysrand_chunk {
     }
 }
 
+#[cfg(target_os = "espidf")]
+mod sysrand_chunk {
+    use crate::{c, error};
+
+    #[inline]
+    pub fn chunk(dest: &mut [u8]) -> Result<usize, error::Unspecified> {
+        let chunk_len: c::size_t = dest.len();
+        let r = unsafe { libc::getrandom(dest.as_mut_ptr() as *mut libc::c_void, chunk_len, 0) };
+        if r < 0 {
+            return Err(error::Unspecified);
+        }
+        Ok(r as usize)
+    }
+}
+
 #[cfg(any(
     target_os = "android",
     target_os = "linux",
+    target_os = "espidf",
     target_arch = "wasm32",
     windows
 ))]
